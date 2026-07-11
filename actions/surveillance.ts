@@ -11,9 +11,9 @@ const numberOrNull = (value: FormDataEntryValue | null) => value === null || val
 
 export async function createDiseaseCase(formData: FormData) {
   const session = await requireSession(["health_officer", "admin"]);
-  const data = z.object({ province: text, district: text, sector: z.string(), symptoms: text, onsetDate: text, patientAge: z.coerce.number().int().min(0).max(120), patientSex: text, status: z.enum(["SUSPECTED", "PROBABLE", "CONFIRMED", "DISCARDED"]) }).parse(Object.fromEntries(formData));
+  const data = z.object({ province: text, district: text, sector: text, cell: text, village: text, symptoms: text, onsetDate: text, patientAge: z.coerce.number().int().min(0).max(120), patientSex: text, status: z.enum(["SUSPECTED", "PROBABLE", "CONFIRMED", "DISCARDED"]) }).parse(Object.fromEntries(formData));
   const count = await prisma.diseaseCase.count();
-  const diseaseCase = await prisma.diseaseCase.create({ data: { caseCode: `TYP-${new Date().getFullYear()}-${String(count + 1).padStart(6, "0")}`, submittedById: session.user.id, province: data.province, district: data.district, sector: data.sector || null, symptoms: data.symptoms.split(",").map((item) => item.trim()).filter(Boolean), symptomOnsetDate: new Date(data.onsetDate), patientAge: data.patientAge, patientSex: data.patientSex, status: data.status } });
+  const diseaseCase = await prisma.diseaseCase.create({ data: { caseCode: `TYP-${new Date().getFullYear()}-${String(count + 1).padStart(6, "0")}`, submittedById: session.user.id, province: data.province, district: data.district, sector: data.sector, cell: data.cell, village: data.village, symptoms: data.symptoms.split(",").map((item) => item.trim()).filter(Boolean), symptomOnsetDate: new Date(data.onsetDate), patientAge: data.patientAge, patientSex: data.patientSex, status: data.status } });
   await prisma.auditLog.create({ data: { userId: session.user.id, action: "DISEASE_CASE_CREATED", entity: "DiseaseCase", entityId: diseaseCase.id, description: `Submitted ${diseaseCase.caseCode}` } });
   revalidatePath("/health-officer/cases"); revalidatePath("/health-officer"); revalidatePath("/admin");
 }
