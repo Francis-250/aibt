@@ -149,6 +149,14 @@ enum PredictionStatus {
   FAILED
 }
 
+enum GeographicLevel {
+  PROVINCE
+  DISTRICT
+  SECTOR
+  CELL
+  VILLAGE
+}
+
 enum AlertStatus {
   ACTIVE
   ACKNOWLEDGED
@@ -334,8 +342,12 @@ model Prediction {
   requestedBy         User?            @relation("PredictionRequester", fields: [requestedById], references: [id], onDelete: SetNull)
   modelId             String
   model               MLModel          @relation(fields: [modelId], references: [id], onDelete: Restrict)
+  geographicLevel     GeographicLevel  @default(DISTRICT)
   province            String
-  district            String
+  district            String?
+  sector              String?
+  cell                String?
+  village             String?
   predictionDate      DateTime
   windowStart         DateTime
   windowEnd           DateTime
@@ -351,7 +363,7 @@ model Prediction {
   updatedAt           DateTime         @updatedAt
   alerts              Alert[]
 
-  @@index([province, district, predictionDate])
+  @@index([province, district, sector, cell, village, predictionDate])
   @@index([riskLevel])
   @@index([status])
   @@map("prediction")
