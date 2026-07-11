@@ -1,0 +1,2 @@
+import { ResetPasswordForm } from "@/components/reset-password-form";
+export default async function ResetPasswordPage({ searchParams }: { searchParams: Promise<{ token?: string }> }) { const { token = "" } = await searchParams; return <><p className="text-[10px] font-bold uppercase tracking-[.18em] text-blue-700">Account recovery</p><h1 className="mt-1.5 text-2xl font-black">Choose a password</h1><p className="mb-4 mt-1 text-xs text-slate-500">Use at least eight characters.</p><ResetPasswordForm token={token}/></> }

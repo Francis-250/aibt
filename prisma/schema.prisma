@@ -1,0 +1,488 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// Better Auth models. Keep these fields compatible with the configured plugins.
+model User {
+  id                  String    @id
+  name                String
+  email               String
+  emailVerified       Boolean   @default(false)
+  image               String?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  role                String?
+  banned              Boolean?  @default(false)
+  banReason           String?
+  banExpires          DateTime?
+  phoneNumber         String?
+  phoneNumberVerified Boolean?
+  username            String?
+  displayUsername     String?
+  twoFactorEnabled    Boolean?  @default(false)
+
+  sessions   Session[]
+  accounts   Account[]
+  twofactors TwoFactor[]
+
+  healthOfficerProfile      HealthOfficerProfile?
+  governmentOfficialProfile GovernmentOfficialProfile?
+  submittedCases            DiseaseCase[]              @relation("CaseSubmitter")
+  validatedCases            DiseaseCase[]              @relation("CaseValidator")
+  environmentalRecords      EnvironmentalData[]
+  predictionsRequested      Prediction[]               @relation("PredictionRequester")
+  acknowledgedAlerts        AlertAcknowledgement[]
+  notifications             Notification[]
+  generatedReports          Report[]                   @relation("ReportGenerator")
+  auditLogs                 AuditLog[]
+  settingsUpdated           Setting[]                  @relation("SettingUpdater")
+
+  @@unique([email])
+  @@unique([phoneNumber])
+  @@unique([username])
+  @@map("user")
+}
+
+model Session {
+  id             String   @id
+  expiresAt      DateTime
+  token          String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  ipAddress      String?
+  userAgent      String?
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  impersonatedBy String?
+
+  @@unique([token])
+  @@index([userId])
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([userId])
+  @@map("account")
+}
+
+model Verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+  @@map("verification")
+}
+
+model TwoFactor {
+  id          String   @id
+  secret      String
+  backupCodes String
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  verified    Boolean? @default(true)
+
+  @@index([secret])
+  @@index([userId])
+  @@map("twoFactor")
+}
+
+enum CaseStatus {
+  SUSPECTED
+  PROBABLE
+  CONFIRMED
+  DISCARDED
+}
+
+enum ValidationStatus {
+  PENDING
+  VALIDATED
+  REJECTED
+}
+
+enum PatientOutcome {
+  UNDER_TREATMENT
+  RECOVERED
+  DECEASED
+  UNKNOWN
+}
+
+enum DataSource {
+  MANUAL
+  CSV_IMPORT
+  WEATHER_API
+  SENSOR
+}
+
+enum RiskLevel {
+  LOW
+  MODERATE
+  HIGH
+  CRITICAL
+}
+
+enum PredictionStatus {
+  PENDING
+  COMPLETED
+  FAILED
+}
+
+enum AlertStatus {
+  ACTIVE
+  ACKNOWLEDGED
+  RESOLVED
+}
+
+enum NotificationStatus {
+  UNREAD
+  READ
+}
+
+enum NotificationType {
+  OUTBREAK_ALERT
+  CASE_VALIDATION
+  PREDICTION_READY
+  REPORT_READY
+  SYSTEM
+}
+
+enum ReportType {
+  DAILY
+  WEEKLY
+  MONTHLY
+  ANNUAL
+  PREDICTION
+  REGIONAL
+  NATIONAL
+  SUMMARY
+}
+
+enum ReportStatus {
+  PENDING
+  GENERATING
+  READY
+  FAILED
+}
+
+enum ModelStatus {
+  TRAINING
+  ACTIVE
+  INACTIVE
+  FAILED
+}
+
+model HealthOfficerProfile {
+  id             String    @id @default(cuid())
+  userId         String    @unique
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  employeeNumber String?   @unique
+  facilityName   String?
+  province       String?
+  district       String?
+  specialization String?
+  isApproved     Boolean   @default(false)
+  approvedAt     DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([province, district])
+  @@map("health_officer_profile")
+}
+
+model GovernmentOfficialProfile {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  institution String?
+  position    String?
+  province    String?
+  district    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("government_official_profile")
+}
+
+model DiseaseCase {
+  id               String           @id @default(cuid())
+  caseCode         String           @unique
+  submittedById    String
+  submittedBy      User             @relation("CaseSubmitter", fields: [submittedById], references: [id], onDelete: Restrict)
+  validatedById    String?
+  validatedBy      User?            @relation("CaseValidator", fields: [validatedById], references: [id], onDelete: SetNull)
+  status           CaseStatus       @default(SUSPECTED)
+  validationStatus ValidationStatus @default(PENDING)
+  rejectionReason  String?          @db.Text
+  patientAge       Int?
+  patientSex       String?
+  symptoms         Json
+  symptomOnsetDate DateTime
+  diagnosisDate    DateTime?
+  laboratoryResult String?
+  outcome          PatientOutcome   @default(UNKNOWN)
+  province         String
+  district         String
+  sector           String?
+  cell             String?
+  village          String?
+  healthFacility   String?
+  latitude         Float?
+  longitude        Float?
+  notes            String?          @db.Text
+  validatedAt      DateTime?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  @@index([province, district])
+  @@index([status, validationStatus])
+  @@index([symptomOnsetDate])
+  @@index([createdAt])
+  @@map("disease_case")
+}
+
+model EnvironmentalData {
+  id                 String     @id @default(cuid())
+  recordedById       String
+  recordedBy         User       @relation(fields: [recordedById], references: [id], onDelete: Restrict)
+  source             DataSource @default(MANUAL)
+  province           String
+  district           String
+  sector             String?
+  recordedAt         DateTime
+  temperatureCelsius Float?
+  rainfallMm         Float?
+  humidityPercent    Float?
+  waterQualityIndex  Float?
+  sanitationCoverage Float?
+  populationDensity  Float?
+  floodingObserved   Boolean    @default(false)
+  cleanWaterAccess   Float?
+  notes              String?    @db.Text
+  isValidated        Boolean    @default(false)
+  createdAt          DateTime   @default(now())
+  updatedAt          DateTime   @updatedAt
+
+  @@index([province, district, recordedAt])
+  @@index([source])
+  @@map("environmental_data")
+}
+
+model WeatherData {
+  id                 String     @id @default(cuid())
+  source             DataSource @default(WEATHER_API)
+  province           String
+  district           String
+  observedAt         DateTime
+  temperatureCelsius Float?
+  rainfallMm         Float?
+  humidityPercent    Float?
+  windSpeedKph       Float?
+  rawPayload         Json?
+  createdAt          DateTime   @default(now())
+
+  @@unique([province, district, observedAt, source])
+  @@index([observedAt])
+  @@map("weather_data")
+}
+
+model MLModel {
+  id                String       @id @default(cuid())
+  name              String
+  version           String
+  algorithm         String
+  status            ModelStatus  @default(TRAINING)
+  featureNames      Json
+  trainingMetrics   Json?
+  validationMetrics Json?
+  artifactUrl       String?
+  trainedAt         DateTime?
+  activatedAt       DateTime?
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+  predictions       Prediction[]
+
+  @@unique([name, version])
+  @@index([status])
+  @@map("ml_model")
+}
+
+model Prediction {
+  id                  String           @id @default(cuid())
+  requestedById       String?
+  requestedBy         User?            @relation("PredictionRequester", fields: [requestedById], references: [id], onDelete: SetNull)
+  modelId             String
+  model               MLModel          @relation(fields: [modelId], references: [id], onDelete: Restrict)
+  province            String
+  district            String
+  predictionDate      DateTime
+  windowStart         DateTime
+  windowEnd           DateTime
+  predictedCaseCount  Int
+  outbreakProbability Float
+  confidenceScore     Float
+  riskLevel           RiskLevel
+  recommendation      String           @db.Text
+  inputFeatures       Json
+  status              PredictionStatus @default(COMPLETED)
+  errorMessage        String?          @db.Text
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
+  alerts              Alert[]
+
+  @@index([province, district, predictionDate])
+  @@index([riskLevel])
+  @@index([status])
+  @@map("prediction")
+}
+
+model Alert {
+  id               String                 @id @default(cuid())
+  predictionId     String?
+  prediction       Prediction?            @relation(fields: [predictionId], references: [id], onDelete: SetNull)
+  title            String
+  message          String                 @db.Text
+  riskLevel        RiskLevel
+  status           AlertStatus            @default(ACTIVE)
+  province         String
+  district         String?
+  issuedAt         DateTime               @default(now())
+  resolvedAt       DateTime?
+  createdAt        DateTime               @default(now())
+  updatedAt        DateTime               @updatedAt
+  acknowledgements AlertAcknowledgement[]
+
+  @@index([status, riskLevel])
+  @@index([province, district])
+  @@index([issuedAt])
+  @@map("alert")
+}
+
+model AlertAcknowledgement {
+  id             String   @id @default(cuid())
+  alertId        String
+  alert          Alert    @relation(fields: [alertId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  note           String?  @db.Text
+  acknowledgedAt DateTime @default(now())
+
+  @@unique([alertId, userId])
+  @@index([userId])
+  @@map("alert_acknowledgement")
+}
+
+model Notification {
+  id        String             @id @default(cuid())
+  userId    String
+  user      User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      NotificationType
+  title     String
+  message   String             @db.Text
+  link      String?
+  status    NotificationStatus @default(UNREAD)
+  readAt    DateTime?
+  createdAt DateTime           @default(now())
+
+  @@index([userId, status])
+  @@index([createdAt])
+  @@map("notification")
+}
+
+model Report {
+  id            String       @id @default(cuid())
+  generatedById String?
+  generatedBy   User?        @relation("ReportGenerator", fields: [generatedById], references: [id], onDelete: SetNull)
+  title         String
+  type          ReportType
+  status        ReportStatus @default(PENDING)
+  province      String?
+  district      String?
+  periodStart   DateTime
+  periodEnd     DateTime
+  summary       String?      @db.Text
+  parameters    Json?
+  fileUrl       String?
+  fileFormat    String?
+  isScheduled   Boolean      @default(false)
+  scheduleCron  String?
+  nextRunAt     DateTime?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  @@index([type, status])
+  @@index([periodStart, periodEnd])
+  @@map("report")
+}
+
+model Dashboard {
+  id        String   @id @default(cuid())
+  name      String
+  role      String
+  layout    Json
+  filters   Json?
+  isDefault Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([name, role])
+  @@index([role, isDefault])
+  @@map("dashboard")
+}
+
+model Setting {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  value       Json
+  category    String
+  description String?
+  isPublic    Boolean  @default(false)
+  updatedById String?
+  updatedBy   User?    @relation("SettingUpdater", fields: [updatedById], references: [id], onDelete: SetNull)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([category])
+  @@map("setting")
+}
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action      String
+  entity      String?
+  entityId    String?
+  description String?  @db.Text
+  metadata    Json?
+  ipAddress   String?
+  userAgent   String?
+  createdAt   DateTime @default(now())
+
+  @@index([userId])
+  @@index([action])
+  @@index([entity, entityId])
+  @@index([createdAt])
+  @@map("audit_log")
+}
