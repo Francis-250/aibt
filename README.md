@@ -1,339 +1,179 @@
 # TyphoidWatch Rwanda
 
-AI-assisted typhoid fever surveillance and outbreak prediction platform built from the project SRS.
-
-## Roles
-
-- Administrator: user access, disease data oversight, model governance, reports, settings, and audit logs.
-- Health Officer: case reporting and validation, environmental data, predictions, alerts, and reports.
-- Government Official: national dashboard, regional predictions, priority alerts, and government reports.
-
-## Stack
-
-Next.js 16, React 19, TypeScript, Tailwind CSS, Prisma 7, Neon PostgreSQL, and Better Auth.
-
-## Development
-
-```bash
-corepack pnpm install
-corepack pnpm exec prisma generate
-corepack pnpm dev
-```
-
-The database connection is read from `DATABASE_URL`. Better Auth also requires `BETTER_AUTH_SECRET` and `BETTER_AUTH_URL`.
-
-Open [http://localhost:3000](http://localhost:3000) after starting the development server.
-
-## Demo credentials
-
-Run the seed command before using these accounts. Unless `SEED_USER_PASSWORD` is set, all seeded accounts use the password `TyphoidWatch2026!`.
-
-| Role | Email | Password | Dashboard |
-| --- | --- | --- | --- |
-| Administrator | `admin@typhoidwatch.test` | `TyphoidWatch2026!` | `/admin` |
-| Health Officer | `officer@typhoidwatch.test` | `TyphoidWatch2026!` | `/health-officer` |
-| Government Official | `official@typhoidwatch.test` | `TyphoidWatch2026!` | `/government-official` |
-
-Change the seed password and demonstration credentials before deploying publicly.
-
-## How the system works
-
-## Complete system flow
-
-```text
-User opens TyphoidWatch
-        |
-        v
-Register or sign in with email/password or Google
-        |
-        v
-Better Auth verifies identity and creates a secure session
-        |
-        v
-System reads the assigned role
-        |
-        +--------------------+------------------------+
-        |                    |                        |
-        v                    v                        v
-  Administrator       Health Officer        Government Official
-        |                    |                        |
-        |                    v                        |
-        |             Submit disease case             |
-        |                    |                        |
-        |                    v                        |
-        |             Validate or reject case          |
-        |                    |                        |
-        |                    v                        |
-        |             Add environmental data           |
-        |                    |                        |
-        |                    v                        |
-        |             Generate district prediction     |
-        |                    |                        |
-        |                    v                        |
-        |          Risk and confidence classification  |
-        |                    |                        |
-        |          +---------+---------+              |
-        |          |                   |              |
-        |          v                   v              |
-        |     Low/Moderate         High/Critical       |
-        |          |                   |              |
-        |          v                   v              |
-        |     Store result       Create outbreak alert |
-        |          |                   |              |
-        |          +---------+---------+              |
-        |                    |                        |
-        |                    v                        v
-        |             Health Officer        National/regional review
-        |             acknowledges alert    and alert acknowledgement
-        |                    |                        |
-        +--------------------+------------------------+
-                             |
-                             v
-                    Generate and review reports
-                             |
-                             v
-                 Audit every important system action
-```
-
-### Stage 1: Accessing the platform
-
-1. A visitor opens the landing page.
-2. The visitor can sign in with email and password or use Google authentication.
-3. A new public user can register as a Health Officer.
-4. Better Auth sends an email verification code for email registrations.
-5. After successful authentication, Better Auth creates a secure database-backed session.
-6. The application reads the user role and redirects the user to the correct dashboard.
-
-### Stage 2: Role assignment and access control
-
-The system has three roles:
-
-- **Administrator** manages the platform and assigns roles.
-- **Health Officer** collects, validates, and analyzes surveillance information.
-- **Government Official** reviews national and regional outbreak intelligence.
-
-Public registration never creates an Administrator or Government Official. An Administrator must assign those roles from the user-management dashboard. Dashboard layouts, Server Actions, and authenticated routes verify permissions on the server before reading or changing data.
-
-### Stage 3: Disease case collection
-
-1. A Health Officer opens **Disease Cases**.
-2. The officer selects **Report case**.
-3. A popup form collects:
-   - province, district, and sector;
-   - patient age and sex;
-   - symptoms and symptom-onset date; and
-   - suspected, probable, or confirmed classification.
-4. The system generates a unique case code such as `TYP-2026-000001`.
-5. The case is stored with a `PENDING` validation status.
-6. The system records the submitting officer and creation time.
-7. An audit entry records the submission.
-
-### Stage 4: Disease case validation
-
-1. An authorized Health Officer reviews pending cases.
-2. The officer validates or rejects each record.
-3. The system stores the reviewer and validation time.
-4. Rejected or still-pending cases are excluded from outbreak calculations.
-5. Validated records become part of the trusted surveillance dataset.
-6. The validation decision is added to the audit history.
-
-### Stage 5: Environmental data collection
-
-1. A Health Officer opens **Environmental Data**.
-2. The officer selects **Add observation**.
-3. A popup records the location and observation date.
-4. The officer can provide:
-   - temperature;
-   - rainfall;
-   - humidity;
-   - water-quality index;
-   - sanitation coverage; and
-   - whether flooding was observed.
-5. The observation is stored for its district.
-6. The most recent district observation is used when a prediction is requested.
-
-### Stage 6: Generating an outbreak prediction
-
-1. A Health Officer opens **Predictions**.
-2. The officer provides a province and district.
-3. The system finds the active prediction model.
-4. The system counts validated cases during the most recent 30 days.
-5. It separately counts validated cases during the preceding 30 days.
-6. It loads the latest environmental observation for the district.
-7. The prediction engine evaluates case volume, case growth, rainfall, humidity, water quality, sanitation, and flooding.
-8. The system produces:
-   - outbreak probability;
-   - expected case count;
-   - confidence score;
-   - `LOW`, `MODERATE`, `HIGH`, or `CRITICAL` risk; and
-   - a recommended public-health response.
-9. The complete input snapshot and result are saved for traceability.
-
-### Stage 7: Alert generation and response
-
-1. `LOW` and `MODERATE` results are stored without creating a priority alert.
-2. `HIGH` and `CRITICAL` predictions automatically create an outbreak alert.
-3. The alert identifies the affected province, district, risk level, and recommended response.
-4. Health Officers review local alerts and acknowledge that they have seen them.
-5. Government Officials review the same priority signals from the national dashboard.
-6. Alert acknowledgement records who responded and when.
-7. Resolved alerts remain available as alert history.
-
-### Stage 8: Government monitoring
-
-Government Officials use a read-focused dashboard to:
-
-- view national validated-case totals;
-- compare regional prediction results;
-- identify high-risk and critical districts;
-- monitor active outbreak alerts;
-- acknowledge alerts requiring government coordination; and
-- review national, regional, annual, and summary reports.
-
-Government Officials cannot submit or modify disease and environmental records through their dashboard.
-
-### Stage 9: Reports
-
-The reporting module stores report requests and generated report metadata. Supported report categories include:
-
-- daily;
-- weekly;
-- monthly;
-- annual;
-- prediction;
-- regional;
-- national; and
-- summarized reports.
-
-A report can contain a reporting period, geographic filter, generation status, summary, export format, file location, and optional schedule.
-
-### Stage 10: System administration
-
-Administrators can:
-
-- review users and change assigned roles;
-- monitor all disease case records;
-- register and monitor prediction-model versions;
-- review report jobs;
-- configure system and AI settings;
-- inspect application activity; and
-- review the complete audit log.
-
-The active model must exist before a Health Officer can generate a prediction. The seed process creates an active development baseline model automatically.
-
-### Stage 11: Audit and accountability
-
-Important operations create audit records. Each record can include:
-
-- the acting user;
-- action name;
-- affected entity and entity ID;
-- human-readable description;
-- additional metadata;
-- IP address and user agent when available; and
-- creation time.
-
-This provides traceability for case submissions, validation decisions, predictions, role changes, model changes, and system configuration.
-
-### Stage 12: Data flow summary
-
-```text
-Health Officer
-    -> Disease case data
-    -> Case validation
-    -> Environmental observation
-    -> PostgreSQL / Neon database
-    -> Prediction engine
-    -> Probability + confidence + risk classification
-    -> Recommendation
-    -> Alert when risk is high or critical
-    -> Health Officer and Government Official dashboards
-    -> Reports
-    -> Public-health response
-
-Administrator
-    -> Users + roles
-    -> Model versions
-    -> Settings
-    -> Reports
-    -> Audit monitoring
-```
-
-### 1. Authentication and role routing
-
-Better Auth manages email/password authentication, Google sign-in, email verification, password recovery, sessions, and two-factor fields. After login, the system reads the user role and sends the user to the correct dashboard.
-
-- Public registration creates a Health Officer account.
-- Government Official and Administrator roles are assigned by an Administrator.
-- Server Actions and dashboard layouts verify the session and role again on the server.
-
-### 2. Disease surveillance
-
-A Health Officer opens **Disease Cases**, selects **Report case**, and records the location, patient details, symptoms, onset date, and initial classification. A submitted case remains pending until an authorized Health Officer validates or rejects it. Only validated records are counted when generating outbreak predictions.
-
-### 3. Environmental monitoring
-
-From **Environmental Data**, a Health Officer records district conditions such as temperature, rainfall, humidity, water quality, sanitation coverage, and flooding. The latest observation for the selected district is used as environmental context during prediction.
-
-### 4. Outbreak prediction
-
-A Health Officer selects a province and district from **Predictions**. The system combines:
-
-- validated cases from the latest 30 days;
-- validated cases from the preceding 30 days;
-- the latest district environmental observation; and
-- the currently active model configuration.
-
-The result includes outbreak probability, expected cases, confidence, risk level, and a recommended response. High or critical results automatically create an outbreak alert.
-
-### 5. Alerts and reporting
-
-Health Officers and Government Officials can review and acknowledge outbreak alerts. Government Officials receive a national view of validated cases, regional predictions, high-risk districts, and active alerts. Report records support daily, weekly, monthly, annual, regional, national, prediction, and summary categories.
-
-### 6. Administration and auditing
-
-Administrators manage user roles, disease records, active model versions, reports, system settings, and audit history. Important data and administrative actions create audit records for traceability.
-
-## Main routes
-
-| Area | Routes |
+Typhoid fever surveillance and outbreak-risk platform for Health Officers, Government Officials, and Administrators.
+
+## Technology
+
+- Next.js 16, React 19, TypeScript, Tailwind CSS, and shadcn/ui
+- Prisma 7 and Neon PostgreSQL
+- Custom HS256 JWT authentication using `jose`
+- Password hashing using Node.js `crypto.scrypt`
+- SMTP email delivery using Nodemailer
+- Recharts prediction visualizations
+
+## Authentication
+
+Authentication is implemented with short, explicit JSON API routes under `app/api/auth`.
+
+- A signed JWT is stored in the `typhoidwatch_session` secure, HTTP-only, same-site cookie.
+- Session JWTs contain the user ID, role, token version, issuer, audience, issue time, and expiration.
+- Every server session verifies the signature, user existence, role, suspension state, and current token version.
+- Passwords use scrypt with a random 16-byte salt and are stored only as `salt:hash` envelopes.
+- Password verification uses `crypto.timingSafeEqual`.
+- Public registration creates only a `health_officer` account.
+- Administrators assign `admin` and `government_official` roles.
+- Role changes, suspension changes, and password resets increment `tokenVersion`, invalidating existing JWT sessions.
+- Password-reset JWTs are purpose-specific and expire after approximately 20 minutes.
+- Forgot-password always returns the same response whether or not the email exists.
+
+### Authentication API routes
+
+| Endpoint | Purpose |
 | --- | --- |
-| Public and authentication | `/`, `/auth/login`, `/auth/register`, `/auth/forgot-password` |
-| Administrator | `/admin`, `/admin/users`, `/admin/cases`, `/admin/models`, `/admin/reports`, `/admin/audit`, `/admin/settings` |
-| Health Officer | `/health-officer`, `/health-officer/cases`, `/health-officer/environment`, `/health-officer/predictions`, `/health-officer/alerts`, `/health-officer/reports` |
-| Government Official | `/government-official`, `/government-official/predictions`, `/government-official/alerts`, `/government-official/reports` |
+| `POST /api/auth/login` | Verify credentials and set the session cookie |
+| `POST /api/auth/register` | Create a Health Officer and set the session cookie |
+| `POST /api/auth/logout` | Delete the current session cookie |
+| `POST /api/auth/forgot-password` | Send a generic password-reset response and email when applicable |
+| `POST /api/auth/reset-password` | Verify the reset JWT, change the password, and invalidate sessions |
+
+Every authentication endpoint returns JSON, including validation failures and unexpected server errors.
 
 ## Environment variables
 
+Configure these values in `.env.local` for development and in the deployment environment for production:
+
 ```env
 DATABASE_URL=
-BETTER_AUTH_SECRET=
-BETTER_AUTH_URL=http://localhost:3000
-GOOGLE_CLIENT_ID=
-GOOGLE_CLIENT_SECRET=
-BREVO_API_KEY=
-BREVO_SENDER_EMAIL=
-BREVO_SENDER_NAME=TyphoidWatch Rwanda
+
+# At least 32 unpredictable characters. Use a different value per environment.
+JWT_SECRET=
+
+SMTP_HOST=
+SMTP_PORT=587
+SMTP_SECURE=false
+SMTP_USER=
+SMTP_PASSWORD=
+SMTP_FROM_EMAIL=
+SMTP_FROM_NAME=TyphoidWatch Rwanda
+
+# Optional application services
+GROQ_API_KEY=
+
+# Optional seed override
 SEED_USER_PASSWORD=
 ```
 
-Google variables are required for social login. Brevo variables are required for verification and password-recovery email delivery.
+Use `SMTP_SECURE=true` for implicit TLS connections such as port 465. For STARTTLS configurations such as port 587, normally use `SMTP_SECURE=false`.
 
-## Seed data
+Never commit `JWT_SECRET`, SMTP credentials, or `DATABASE_URL`.
+
+## Installation and database migration
+
+```bash
+corepack pnpm install
+corepack pnpm exec prisma format
+corepack pnpm exec prisma validate
+corepack pnpm exec prisma generate
+corepack pnpm exec prisma db push
+corepack pnpm dev
+```
+
+After changing environment variables, restart the development server.
+
+### Migration from the previous authentication system
+
+The completed migration followed this safe order:
+
+1. Add `User.passwordHash` and `User.tokenVersion`.
+2. Copy compatible credential hashes onto `User`.
+3. Verify every stored credential hash was copied.
+4. Remove obsolete authentication tables and configuration.
+5. Regenerate Prisma Client and apply the final schema.
+
+Existing user and application records were preserved. Accounts that previously existed only through social login have no local password and must use password reset to establish one.
+
+## Seed data and credentials
 
 ```bash
 corepack pnpm db:seed
 ```
 
-Set `SEED_USER_PASSWORD` before seeding outside local development. The seed creates demonstration accounts for all three roles, an active transparent baseline model, sample case/environmental records, a prediction, and an alert.
+The seed is idempotent by email and fixed domain IDs. It uses the same scrypt password helper as production authentication and invalidates old sessions when seeded passwords or roles are updated.
 
-After changing the Prisma schema, run:
+Unless `SEED_USER_PASSWORD` is configured, the development password is `TyphoidWatch2026!`.
 
-```bash
-corepack pnpm exec prisma generate
-corepack pnpm exec prisma db push
+| Role | Email | Dashboard |
+| --- | --- | --- |
+| Administrator | `admin@typhoidwatch.test` | `/admin` |
+| Health Officer | `officer@typhoidwatch.test` | `/health-officer` |
+| Government Official | `official@typhoidwatch.test` | `/government-official` |
+
+Change all demonstration credentials before public deployment.
+
+## System flow
+
+```text
+User registers or signs in
+        ↓
+Server verifies scrypt password
+        ↓
+HS256 JWT is issued in a secure HTTP-only cookie
+        ↓
+Role-specific dashboard opens
+        ↓
+Health Officer submits a case using Rwanda location data
+        ↓
+Authorized officer validates the case
+        ↓
+System automatically recalculates province, district, sector, cell, and village risk
+        ↓
+Environmental observations trigger province, district, and sector recalculation
+        ↓
+High or critical risk creates an alert
+        ↓
+Government Official sees predictions and alerts automatically
+        ↓
+Administrator manages users, roles, models, settings, and audit history
 ```
 
-## Prediction safety
+## Roles
 
-The included scoring engine is an explainable development baseline, not a clinically validated machine-learning artifact. Its outputs must be reviewed by qualified public-health professionals. Replace it with a validated trained model before production decision-making.
+### Health Officer
+
+- Submit and validate typhoid cases
+- Record environmental observations
+- Run on-demand geographic predictions
+- Review automatic predictions and alerts
+- Acknowledge alerts and review reports
+
+### Government Official
+
+- Review national and regional statistics
+- Compare province-to-village predictions
+- Monitor and acknowledge priority alerts
+- Review government reports
+
+### Administrator
+
+- Manage users, roles, and suspensions
+- Monitor disease records
+- Register and activate model versions
+- Configure system settings
+- Review reports and audit history
+
+## Prediction behavior
+
+Automatic prediction occurs when a case is validated or environmental data changes. The service combines validated case counts from two consecutive 30-day periods with the closest environmental observation. Results include probability, expected cases, confidence, risk classification, and recommendation.
+
+The included engine is an explainable development baseline, not a clinically validated model. Replace or calibrate it using an approved historical typhoid dataset before production medical use.
+
+## Verification
+
+```bash
+corepack pnpm exec prisma format
+corepack pnpm exec prisma validate
+corepack pnpm exec prisma generate
+corepack pnpm exec tsc --noEmit
+corepack pnpm exec eslint .
+corepack pnpm run build
+```

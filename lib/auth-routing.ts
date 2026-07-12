@@ -1,17 +1,17 @@
 export type AppRole = "admin" | "health_officer" | "government_official";
 
-export function normalizeRole(role?: string | null): AppRole {
+export function normalizeRole(role?: string | null): AppRole | null {
   const value = role?.trim().toLowerCase().replaceAll("-", "_");
-  if (value === "admin") return "admin";
-  if (value === "government_official") return "government_official";
-  return "health_officer";
+  if (value === "admin" || value === "health_officer" || value === "government_official") return value;
+  return null;
 }
 
 export function roleHome(role?: string | null) {
   const normalized = normalizeRole(role);
   if (normalized === "admin") return "/admin";
   if (normalized === "government_official") return "/government-official";
-  return "/health-officer";
+  if (normalized === "health_officer") return "/health-officer";
+  return "/auth/login";
 }
 
 export function roleForPath(pathname: string): AppRole | null {
@@ -21,6 +21,4 @@ export function roleForPath(pathname: string): AppRole | null {
   return null;
 }
 
-export function roleMatches(required: AppRole, actual?: string | null) {
-  return required === normalizeRole(actual);
-}
+export function roleMatches(required: AppRole, actual?: string | null) { return required === normalizeRole(actual); }
