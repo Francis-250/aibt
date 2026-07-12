@@ -1,2 +1,15 @@
 import { AuthForm } from "@/components/auth-form";
-export default function LoginPage(){return <><p className="text-[10px] font-bold uppercase tracking-[.18em] text-blue-700">Authorized personnel</p><h1 className="mt-1.5 text-2xl font-black">Sign in</h1><p className="mb-4 mt-1 text-xs text-slate-500">Access your surveillance workspace.</p><AuthForm mode="login"/></>}
+export default function LoginPage() {
+  return (
+    <>
+      <p className="text-[10px] font-bold uppercase tracking-[.18em] text-blue-700">
+        Authorized personnel
+      </p>
+      <h1 className="mt-1.5 text-2xl font-black">Sign in</h1>
+      <p className="mb-4 mt-1 text-xs text-slate-500">
+        Access your surveillance workspace.
+      </p>
+      <AuthForm mode="login" />
+    </>
+  );
+}
