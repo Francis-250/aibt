@@ -13,6 +13,7 @@ const schema = z.object({
   name: z.string().trim().min(2).max(100),
   email: z.string().email(),
   password: z.string().min(8).max(200),
+  role: z.enum(["health_officer", "government_official"]).default("health_officer"),
 });
 
 export async function POST(request: Request) {
@@ -28,20 +29,33 @@ export async function POST(request: Request) {
       await prisma.user.findUnique({ where: { email }, select: { id: true } })
     )
       return jsonError("An account with this email already exists.", 409);
+    const role = parsed.data.role;
     const user = await prisma.user.create({
       data: {
         name: parsed.data.name,
         email,
-        role: "health_officer",
+        role,
         passwordHash: await hashPassword(parsed.data.password),
       },
     });
     const token = await signSessionToken({
       userId: user.id,
-      role: "health_officer",
+      role,
       tokenVersion: user.tokenVersion,
     });
     (await cookies()).set(SESSION_COOKIE, token, sessionCookieOptions);
+    if (role === "government_official") {
+      await prisma.auditLog.create({
+        data: {
+          userId: user.id,
+          action: "GOVERNMENT_OFFICIAL_REGISTERED",
+          entity: "User",
+          entityId: user.id,
+          description: "Registered from shared registration form",
+        },
+      });
+      return jsonOk({ redirectTo: "/government-official/profile" }, 201);
+    }
     return jsonOk({ redirectTo: "/health-officer" }, 201);
   } catch (error) {
     if (

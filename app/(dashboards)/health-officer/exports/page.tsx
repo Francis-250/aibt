@@ -1,6 +1,5 @@
 import { requireSession } from "@/lib/session";
 import prisma from "@/lib/prisma";
-import { exportDataset } from "@/actions/reports";
 import { PageHeader } from "@/components/dashboard-ui";
 import { Button } from "@/components/ui/button";
 import { FileSpreadsheet, FileText } from "lucide-react";
@@ -91,14 +90,14 @@ function ExportCard({ type, title, description, icon: Icon }: { type: string; ti
           <p className="mt-1 text-sm text-slate-500">{description}</p>
         </div>
       </div>
-      <form action={async (formData) => { await exportDataset(formData); }} className="mt-4">
+      <form action="/api/exports" method="post" className="mt-4">
         <input type="hidden" name="type" value={type} />
+        <input type="hidden" name="format" value="CSV" />
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="text-xs font-semibold">
             Format
             <select name="format" className="mt-1 w-full rounded border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100">
               <option value="CSV">CSV</option>
-              <option value="EXCEL">Excel</option>
             </select>
           </label>
           <label className="text-xs font-semibold">
@@ -120,7 +119,7 @@ function ExportCard({ type, title, description, icon: Icon }: { type: string; ti
         </div>
         <div className="mt-4">
           <Button type="submit" className="rounded bg-slate-950 text-white w-full sm:w-auto">
-            Export {type.replace("_", " ")}
+            Download CSV
           </Button>
         </div>
       </form>

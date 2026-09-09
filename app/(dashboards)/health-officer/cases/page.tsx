@@ -49,10 +49,20 @@ export default async function Page() {
                     <CaseDetailDialog caseId={item.id} userRole={session.role} userId={session.user.id} />
                     {item.validationStatus === "PENDING" && (
                       <>
-                        <form action={validateDiseaseCase.bind(null, item.id, "VALIDATED")}>
+                        <form
+                          action={async () => {
+                            "use server";
+                            await validateDiseaseCase(item.id, "VALIDATED");
+                          }}
+                        >
                           <button className="text-xs font-bold text-blue-700">Validate</button>
                         </form>
-                        <form action={validateDiseaseCase.bind(null, item.id, "REJECTED")}>
+                        <form
+                          action={async () => {
+                            "use server";
+                            await validateDiseaseCase(item.id, "REJECTED");
+                          }}
+                        >
                           <button className="text-xs font-bold text-rose-600">Reject</button>
                         </form>
                       </>

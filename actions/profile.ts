@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { z } from "zod";
 import prisma from "@/lib/prisma";
 import { requireSession } from "@/lib/session";
@@ -82,9 +83,12 @@ export async function updateGovernmentOfficialProfile(formData: FormData) {
         department: optional(formData, "department"),
         province: optional(formData, "province"),
         district: optional(formData, "district"),
+        status: "PENDING",
+        rejectionReason: null,
       },
     }),
     prisma.auditLog.create({ data: { userId: session.user.id, action: "PROFILE_UPDATED", entity: "GovernmentOfficialProfile", entityId: session.user.id } }),
   ]);
   revalidatePath("/government-official/profile");
+  redirect("/government-official");
 }

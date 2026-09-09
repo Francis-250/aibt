@@ -26,8 +26,6 @@ export default async function Page() {
       user={user}
       status={{ label: "Status", value: profile?.status ? statusLabel[profile.status as keyof typeof statusLabel] : "Not registered" }}
       fields={[
-        { name: "name", label: "Full name", value: user.name },
-        { name: "email", label: "Email address", value: user.email, readOnly: true },
         { name: "phone", label: "Phone number", value: user.phone ?? "" },
         { name: "institution", label: "Institution", value: profile?.institution ?? "" },
         { name: "position", label: "Position", value: profile?.position ?? "" },

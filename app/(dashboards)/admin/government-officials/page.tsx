@@ -57,11 +57,18 @@ export default async function Page() {
                   <div className="flex flex-wrap gap-2">
                     {p.status === "PENDING" && (
                       <>
-                        <form action={approveGovernmentOfficial.bind(null, p.id, "APPROVE")} className="flex gap-2">
+                        <form
+                          action={async () => {
+                            "use server";
+                            await approveGovernmentOfficial(p.id, "APPROVE");
+                          }}
+                          className="flex gap-2"
+                        >
                           <button className="text-xs font-bold text-green-700">Approve</button>
                         </form>
                         <form
                           action={async (formData) => {
+                            "use server";
                             await approveGovernmentOfficial(p.id, "REJECT", String(formData.get("reason") ?? ""));
                           }}
                           className="flex gap-2"
@@ -74,6 +81,7 @@ export default async function Page() {
                     {(p.status === "APPROVED" || p.status === "ACTIVE") && (
                       <form
                         action={async (formData) => {
+                          "use server";
                           await suspendGovernmentOfficial(p.id, String(formData.get("reason") ?? ""));
                         }}
                         className="flex gap-2"

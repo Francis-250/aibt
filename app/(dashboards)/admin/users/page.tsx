@@ -2,14 +2,15 @@ import prisma from "@/lib/prisma";
 import { updateUserRole, setUserSuspension, toggleUserActive } from "@/actions/admin";
 import { PageHeader } from "@/components/dashboard-ui";
 import { CreateUserDialog } from "@/components/create-user-dialog";
+import { UserDetailsDialog } from "@/components/user-details-dialog";
 
 export default async function Page() {
   const users = await prisma.user.findMany({
     orderBy: { createdAt: "desc" },
     take: 100,
     include: {
-      healthOfficerProfile: { select: { status: true } },
-      governmentOfficialProfile: { select: { status: true } },
+      healthOfficerProfile: { select: { status: true, employeeNumber: true, facilityName: true, province: true, district: true } },
+      governmentOfficialProfile: { select: { status: true, institution: true, position: true, department: true, province: true, district: true } },
     },
   });
 
@@ -72,7 +73,9 @@ export default async function Page() {
                 <td>{u.role?.replaceAll("_", " ")}</td>
                 <td className="p-4">{getStatusBadge(u)}</td>
                 <td className="p-4">
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex items-center gap-2">
+                    <UserDetailsDialog user={{ name: u.name, email: u.email, role: u.role ?? "", createdAt: u.createdAt.toISOString(), isActive: u.isActive, banned: u.banned, phone: u.phone, profile: u.role === "government_official" ? u.governmentOfficialProfile : u.healthOfficerProfile }} />
+                    <div className="flex flex-wrap gap-2">
                     <form action={updateUserRole.bind(null, u.id)} className="flex gap-2">
                       <select
                         name="role"
@@ -86,12 +89,19 @@ export default async function Page() {
                       <button className="font-bold text-slate-900 text-xs">Save</button>
                     </form>
                     {u.banned && (!u.banExpires || u.banExpires > new Date()) ? (
-                      <form action={setUserSuspension.bind(null, u.id, false)} className="flex gap-2">
+                      <form
+                        action={async () => {
+                          "use server";
+                          await setUserSuspension(u.id, false);
+                        }}
+                        className="flex gap-2"
+                      >
                         <button className="text-xs font-bold text-green-700">Reactivate</button>
                       </form>
                     ) : (
                       <form
                         action={async (formData) => {
+                          "use server";
                           await setUserSuspension(u.id, true, String(formData.get("reason") ?? ""));
                         }}
                         className="flex gap-2"
@@ -101,14 +111,27 @@ export default async function Page() {
                       </form>
                     )}
                     {u.isActive ? (
-                      <form action={toggleUserActive.bind(null, u.id, false)} className="flex gap-2">
+                      <form
+                        action={async () => {
+                          "use server";
+                          await toggleUserActive(u.id, false);
+                        }}
+                        className="flex gap-2"
+                      >
                         <button className="text-xs font-bold text-amber-700">Deactivate</button>
                       </form>
                     ) : (
-                      <form action={toggleUserActive.bind(null, u.id, true)} className="flex gap-2">
+                      <form
+                        action={async () => {
+                          "use server";
+                          await toggleUserActive(u.id, true);
+                        }}
+                        className="flex gap-2"
+                      >
                         <button className="text-xs font-bold text-green-700">Activate</button>
                       </form>
                     )}
+                    </div>
                   </div>
                 </td>
               </tr>

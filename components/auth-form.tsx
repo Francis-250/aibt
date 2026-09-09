@@ -9,6 +9,9 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
   const router = useRouter();
   const [error, setError] = useState("");
   const [pending, setPending] = useState(false);
+  const [role, setRole] = useState<"health_officer" | "government_official">(
+    "health_officer",
+  );
   const inputClass =
     "mt-1 w-full rounded border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100";
   async function submit(event: React.FormEvent<HTMLFormElement>) {
@@ -20,6 +23,7 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
       name: String(form.get("name") ?? ""),
       email: String(form.get("email") ?? ""),
       password: String(form.get("password") ?? ""),
+      role: mode === "register" ? role : undefined,
     });
     if (!result.ok) {
       setError(result.error || "Authentication failed.");
@@ -63,6 +67,24 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
           className={inputClass}
         />
       </label>
+      {mode === "register" && (
+        <label className="block text-xs font-semibold text-slate-700">
+          Role
+          <select
+            name="role"
+            value={role}
+            onChange={(event) =>
+              setRole(
+                event.target.value as "health_officer" | "government_official",
+              )
+            }
+            className={inputClass}
+          >
+            <option value="health_officer">Health Officer</option>
+            <option value="government_official">Government Official</option>
+          </select>
+        </label>
+      )}
       {mode === "login" && (
         <div className="text-right">
           <Link
@@ -72,14 +94,6 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
             Forgot password?
           </Link>
         </div>
-      )}
-      {mode === "login" && (
-        <p className="text-center text-xs text-slate-500">
-          Register as Government Official?{" "}
-          <Link href="/auth/gov-register" className="font-semibold text-blue-700">
-            Create Government account
-          </Link>
-        </p>
       )}
       {error && (
         <p className="rounded border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-700">
@@ -91,7 +105,7 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
         className="flex w-full items-center justify-center rounded bg-slate-950 px-3 py-2.5 text-sm font-semibold text-white disabled:opacity-60"
       >
         {pending && <Loader2 className="mr-2 animate-spin" size={14} />}{" "}
-        {mode === "login" ? "Sign in" : "Create Health Officer account"}
+        {mode === "login" ? "Sign in" : "Create account"}
       </button>
       <p className="pt-1 text-center text-xs text-slate-500">
         {mode === "login" ? "New to TyphoidWatch?" : "Already registered?"}{" "}

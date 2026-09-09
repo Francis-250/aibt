@@ -57,11 +57,18 @@ export default async function Page() {
                   <div className="flex flex-wrap gap-2">
                     {p.status === "PENDING" && (
                       <>
-                        <form action={verifyHealthOfficer.bind(null, p.id, "VERIFY")} className="flex gap-2">
+                        <form
+                          action={async () => {
+                            "use server";
+                            await verifyHealthOfficer(p.id, "VERIFY");
+                          }}
+                          className="flex gap-2"
+                        >
                           <button className="text-xs font-bold text-green-700">Verify</button>
                         </form>
                         <form
                           action={async (formData) => {
+                            "use server";
                             await verifyHealthOfficer(p.id, "REJECT", String(formData.get("reason") ?? ""));
                           }}
                           className="flex gap-2"
@@ -72,13 +79,20 @@ export default async function Page() {
                       </>
                     )}
                     {p.status === "VERIFIED" && (
-                      <form action={activateHealthOfficer.bind(null, p.id)} className="flex gap-2">
+                      <form
+                        action={async () => {
+                          "use server";
+                          await activateHealthOfficer(p.id);
+                        }}
+                        className="flex gap-2"
+                      >
                         <button className="text-xs font-bold text-blue-700">Activate</button>
                       </form>
                     )}
                     {(p.status === "ACTIVE" || p.status === "VERIFIED") && (
                       <form
                         action={async (formData) => {
+                          "use server";
                           await suspendHealthOfficer(p.id, String(formData.get("reason") ?? ""));
                         }}
                         className="flex gap-2"

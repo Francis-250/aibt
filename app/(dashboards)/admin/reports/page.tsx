@@ -1,5 +1,4 @@
 import prisma from "@/lib/prisma";
-import { generateReport } from "@/actions/reports";
 import { PageHeader, EmptyState } from "@/components/dashboard-ui";
 import { Button } from "@/components/ui/button";
 import { FileText, Filter } from "lucide-react";
@@ -79,7 +78,7 @@ function ReportGeneratorForm() {
   return (
     <div className="mt-6 rounded border border-slate-200 bg-white p-5">
       <h3 className="font-semibold mb-4">Generate New Report</h3>
-      <form action={async (formData) => { await generateReport(formData); }} className="grid gap-4 md:grid-cols-3">
+      <form action="/api/reports" method="post" className="grid gap-4 md:grid-cols-3">
         <label className="text-xs font-semibold">
           Title
           <input name="title" required placeholder="e.g., Weekly Typhoid Summary - Gasabo" className="mt-1 w-full rounded border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100" />
@@ -101,8 +100,6 @@ function ReportGeneratorForm() {
           Export Format
           <select name="format" required className="mt-1 w-full rounded border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100">
             <option value="CSV">CSV</option>
-            <option value="EXCEL">Excel</option>
-            <option value="PDF">PDF</option>
           </select>
         </label>
         <label className="text-xs font-semibold">
@@ -128,7 +125,7 @@ function ReportGeneratorForm() {
         <div className="md:col-span-3">
           <Button type="submit" className="rounded bg-slate-950 text-white">
             <Filter className="mr-2 h-4 w-4" />
-            Generate Report
+            Generate & Download CSV
           </Button>
         </div>
       </form>

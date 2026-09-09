@@ -31,6 +31,29 @@ function EnvironmentalEditContent({ recordId, initialData }: EnvironmentalEditDi
   const [province, setProvince] = useState(initialData.province);
   const [district, setDistrict] = useState(initialData.district);
   const [sector, setSector] = useState(initialData.sector || "");
+  const numericFields = [
+    ["temperatureCelsius", "Temperature °C"],
+    ["rainfallMm", "Rainfall mm"],
+    ["humidityPercent", "Humidity %"],
+    ["waterQualityIndex", "Water quality index"],
+    ["sanitationCoverage", "Sanitation coverage %"],
+    ["cleanWaterAccess", "Clean water access %"],
+    ["populationDensity", "Population density"],
+  ] satisfies Array<
+    [
+      keyof Pick<
+        EnvironmentalEditDialogProps["initialData"],
+        | "temperatureCelsius"
+        | "rainfallMm"
+        | "humidityPercent"
+        | "waterQualityIndex"
+        | "sanitationCoverage"
+        | "cleanWaterAccess"
+        | "populationDensity"
+      >,
+      string,
+    ]
+  >;
 
   const provinces = Object.keys(locations).sort();
   const districts = province ? Object.keys(locations[province] ?? {}).sort() : [];
@@ -70,18 +93,10 @@ function EnvironmentalEditContent({ recordId, initialData }: EnvironmentalEditDi
           Observation Date
           <input name="recordedAt" type="date" defaultValue={initialData.recordedAt} required className={`mt-1 ${input}`} />
         </label>
-        {[
-          ["temperatureCelsius", "Temperature °C"],
-          ["rainfallMm", "Rainfall mm"],
-          ["humidityPercent", "Humidity %"],
-          ["waterQualityIndex", "Water quality index"],
-          ["sanitationCoverage", "Sanitation coverage %"],
-          ["cleanWaterAccess", "Clean water access %"],
-          ["populationDensity", "Population density"],
-        ].map(([name, label]) => (
+        {numericFields.map(([name, label]) => (
           <label key={name} className="text-xs font-semibold">
             {label}
-            <input name={name} type="number" step="0.1" defaultValue={initialData[name as keyof typeof initialData] ?? ""} className={`mt-1 ${input}`} />
+            <input name={name} type="number" step="0.1" defaultValue={initialData[name] ?? ""} className={`mt-1 ${input}`} />
           </label>
         ))}
         <label className="flex items-center gap-2 rounded border border-slate-300 px-3 text-xs font-semibold">

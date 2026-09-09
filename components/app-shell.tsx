@@ -14,7 +14,6 @@ const links = {
     ["Health Officers", "/admin/health-officers", Users],
     ["Gov. Officials", "/admin/government-officials", ShieldCheck],
     ["Cases", "/admin/cases", ClipboardList],
-    ["Models", "/admin/models", BrainCircuit],
     ["Reports", "/admin/reports", FileText],
     ["Exports", "/admin/exports", Database],
     ["Audit", "/admin/audit", ShieldCheck],
