@@ -2,6 +2,64 @@ import prisma from "@/lib/prisma";
 import { PageHeader, StatCard } from "@/components/dashboard-ui";
 
 export default async function Page() {
-  const [users, cases, observations, predictions, logs] = await Promise.all([prisma.user.count(), prisma.diseaseCase.count(), prisma.environmentalData.count(), prisma.prediction.count(), prisma.auditLog.findMany({ orderBy: { createdAt: "desc" }, take: 8, include: { user: { select: { name: true } } } })]);
-  return <><PageHeader eyebrow="Administrator" title="System overview" description="Platform usage, data, and recent activity."/><div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4"><StatCard label="Users" value={users} detail="Registered accounts"/><StatCard label="Cases" value={cases} detail="All records"/><StatCard label="Observations" value={observations} detail="Environmental records"/><StatCard label="Predictions" value={predictions} detail="Generated results"/></div><section className="mt-6 rounded border border-slate-200 bg-white"><div className="border-b border-slate-200 px-4 py-3"><h2 className="text-sm font-medium">Recent activity</h2></div><div className="divide-y divide-slate-100">{logs.map(log=><div key={log.id} className="flex items-start justify-between gap-4 px-4 py-3"><div><p className="text-sm">{log.action.replaceAll("_"," ").toLowerCase()}</p><p className="mt-0.5 text-xs text-slate-400">{log.user?.name ?? "System"} · {log.description ?? log.entity ?? "System event"}</p></div><time className="shrink-0 text-xs text-slate-400">{log.createdAt.toLocaleDateString()}</time></div>)}</div></section></>;
+  const [users, cases, observations, predictions, logs] = await Promise.all([
+    prisma.user.count(),
+    prisma.diseaseCase.count(),
+    prisma.environmentalData.count(),
+    prisma.prediction.count(),
+    prisma.auditLog.findMany({
+      orderBy: { createdAt: "desc" },
+      take: 8,
+      include: { user: { select: { name: true } } },
+    }),
+  ]);
+  return (
+    <>
+      <PageHeader
+        eyebrow="Administrator"
+        title="System overview"
+        description="Platform usage, data, and recent activity."
+      />
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <StatCard label="Users" value={users} detail="Registered accounts" />
+        <StatCard label="Cases" value={cases} detail="All records" />
+        <StatCard
+          label="Observations"
+          value={observations}
+          detail="Environmental records"
+        />
+        <StatCard
+          label="Predictions"
+          value={predictions}
+          detail="Generated results"
+        />
+      </div>
+      <section className="mt-6 rounded border border-slate-200 bg-white">
+        <div className="border-b border-slate-200 px-4 py-3">
+          <h2 className="text-sm font-medium">Recent activity</h2>
+        </div>
+        <div className="divide-y divide-slate-100">
+          {logs.map((log) => (
+            <div
+              key={log.id}
+              className="flex items-start justify-between gap-4 px-4 py-3"
+            >
+              <div>
+                <p className="text-sm">
+                  {log.action.replaceAll("_", " ").toLowerCase()}
+                </p>
+                <p className="mt-0.5 text-xs text-slate-400">
+                  {log.user?.name ?? "System"} ·{" "}
+                  {log.description ?? log.entity ?? "System event"}
+                </p>
+              </div>
+              <time className="shrink-0 text-xs text-slate-400">
+                {log.createdAt.toLocaleDateString()}
+              </time>
+            </div>
+          ))}
+        </div>
+      </section>
+    </>
+  );
 }
