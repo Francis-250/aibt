@@ -73,6 +73,14 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
           </Link>
         </div>
       )}
+      {mode === "login" && (
+        <p className="text-center text-xs text-slate-500">
+          Register as Government Official?{" "}
+          <Link href="/auth/gov-register" className="font-semibold text-blue-700">
+            Create Government account
+          </Link>
+        </p>
+      )}
       {error && (
         <p className="rounded border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-700">
           {error}

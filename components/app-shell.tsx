@@ -8,9 +8,36 @@ import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupConte
 import { TooltipProvider } from "@/components/ui/tooltip";
 
 const links = {
-  admin: [["Overview", "/admin", LayoutDashboard], ["Users", "/admin/users", Users], ["Cases", "/admin/cases", ClipboardList], ["Models", "/admin/models", BrainCircuit], ["Reports", "/admin/reports", FileText], ["Audit", "/admin/audit", ShieldCheck], ["Settings", "/admin/settings", Settings], ["Profile", "/admin/profile", CircleUserRound]],
-  health_officer: [["Overview", "/health-officer", LayoutDashboard], ["Cases", "/health-officer/cases", ClipboardList], ["Environment", "/health-officer/environment", Database], ["Predictions", "/health-officer/predictions", BrainCircuit], ["Alerts", "/health-officer/alerts", Bell], ["Reports", "/health-officer/reports", FileText], ["Profile", "/health-officer/profile", CircleUserRound]],
-  government_official: [["Overview", "/government-official", LayoutDashboard], ["Predictions", "/government-official/predictions", BrainCircuit], ["Alerts", "/government-official/alerts", Bell], ["Reports", "/government-official/reports", FileText], ["Profile", "/government-official/profile", CircleUserRound]],
+  admin: [
+    ["Overview", "/admin", LayoutDashboard],
+    ["Users", "/admin/users", Users],
+    ["Health Officers", "/admin/health-officers", Users],
+    ["Gov. Officials", "/admin/government-officials", ShieldCheck],
+    ["Cases", "/admin/cases", ClipboardList],
+    ["Models", "/admin/models", BrainCircuit],
+    ["Reports", "/admin/reports", FileText],
+    ["Exports", "/admin/exports", Database],
+    ["Audit", "/admin/audit", ShieldCheck],
+    ["Settings", "/admin/settings", Settings],
+    ["Profile", "/admin/profile", CircleUserRound],
+  ],
+  health_officer: [
+    ["Overview", "/health-officer", LayoutDashboard],
+    ["Cases", "/health-officer/cases", ClipboardList],
+    ["Environment", "/health-officer/environment", Database],
+    ["Predictions", "/health-officer/predictions", BrainCircuit],
+    ["Alerts", "/health-officer/alerts", Bell],
+    ["Reports", "/health-officer/reports", FileText],
+    ["Exports", "/health-officer/exports", Database],
+    ["Profile", "/health-officer/profile", CircleUserRound],
+  ],
+  government_official: [
+    ["Overview", "/government-official", LayoutDashboard],
+    ["Predictions", "/government-official/predictions", BrainCircuit],
+    ["Alerts", "/government-official/alerts", Bell],
+    ["Reports", "/government-official/reports", FileText],
+    ["Profile", "/government-official/profile", CircleUserRound],
+  ],
 } as const;
 
 export function AppShell({ role, name, children }: { role: keyof typeof links; name: string; children: React.ReactNode }) {

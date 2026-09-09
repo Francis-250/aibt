@@ -12,6 +12,7 @@ model User {
   email         String    @unique
   emailVerified Boolean   @default(false)
   image         String?
+  phone         String?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   role          String    @default("health_officer")
@@ -20,18 +21,22 @@ model User {
   banExpires    DateTime?
   passwordHash  String?
   tokenVersion  Int       @default(0)
+  isActive      Boolean   @default(true)
 
-  healthOfficerProfile      HealthOfficerProfile?
-  governmentOfficialProfile GovernmentOfficialProfile?
-  submittedCases            DiseaseCase[]              @relation("CaseSubmitter")
-  validatedCases            DiseaseCase[]              @relation("CaseValidator")
-  environmentalRecords      EnvironmentalData[]
-  predictionsRequested      Prediction[]               @relation("PredictionRequester")
-  acknowledgedAlerts        AlertAcknowledgement[]
-  notifications             Notification[]
-  generatedReports          Report[]                   @relation("ReportGenerator")
-  auditLogs                 AuditLog[]
-  settingsUpdated           Setting[]                  @relation("SettingUpdater")
+  healthOfficerProfile         HealthOfficerProfile?
+  governmentOfficialProfile    GovernmentOfficialProfile?
+  submittedCases               DiseaseCase[]              @relation("CaseSubmitter")
+  validatedCases               DiseaseCase[]              @relation("CaseValidator")
+  environmentalRecords         EnvironmentalData[]
+  predictionsRequested         Prediction[]               @relation("PredictionRequester")
+  acknowledgedAlerts           AlertAcknowledgement[]
+  notifications                Notification[]
+  generatedReports             Report[]                   @relation("ReportGenerator")
+  auditLogs                    AuditLog[]
+  settingsUpdated              Setting[]                  @relation("SettingUpdater")
+  verifiedHealthOfficers       HealthOfficerProfile[]     @relation("HealthOfficerVerification")
+  approvedGovernmentOfficials  GovernmentOfficialProfile[] @relation("GovernmentOfficialApproval")
+  datasetExports               DatasetExport[]
 
   @@map("user")
 }
@@ -103,6 +108,12 @@ enum NotificationType {
   SYSTEM
 }
 
+enum ExportFormat {
+  CSV
+  EXCEL
+  PDF
+}
+
 enum ReportType {
   DAILY
   WEEKLY
@@ -128,34 +139,66 @@ enum ModelStatus {
   FAILED
 }
 
+enum HealthOfficerStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+  ACTIVE
+  SUSPENDED
+}
+
 model HealthOfficerProfile {
-  id             String    @id @default(cuid())
-  userId         String    @unique
-  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  employeeNumber String?   @unique
+  id             String             @id @default(cuid())
+  userId         String             @unique
+  user           User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  employeeNumber String?            @unique
   facilityName   String?
   province       String?
   district       String?
   specialization String?
-  isApproved     Boolean   @default(false)
+  phone          String?
+  qualification  String?
+  yearsExperience Int?
+  status         HealthOfficerStatus @default(PENDING)
+  verifiedById   String?
+  verifiedBy     User?              @relation("HealthOfficerVerification", fields: [verifiedById], references: [id], onDelete: SetNull)
+  verifiedAt     DateTime?
+  rejectionReason String?
+  isApproved     Boolean            @default(false)
   approvedAt     DateTime?
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
 
   @@index([province, district])
+  @@index([status])
   @@map("health_officer_profile")
 }
 
+enum GovernmentOfficialStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  ACTIVE
+  SUSPENDED
+}
+
 model GovernmentOfficialProfile {
-  id          String   @id @default(cuid())
-  userId      String   @unique
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id          String                   @id @default(cuid())
+  userId      String                   @unique
+  user        User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
   institution String?
   position    String?
   province    String?
   district    String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  phone       String?
+  department  String?
+  status      GovernmentOfficialStatus @default(PENDING)
+  approvedById String?
+  approvedBy   User?                   @relation("GovernmentOfficialApproval", fields: [approvedById], references: [id], onDelete: SetNull)
+  approvedAt   DateTime?
+  rejectionReason String?
+  createdAt   DateTime                 @default(now())
+  updatedAt   DateTime                 @updatedAt
 
   @@map("government_official_profile")
 }
@@ -373,6 +416,25 @@ model Report {
   @@index([type, status])
   @@index([periodStart, periodEnd])
   @@map("report")
+}
+
+model DatasetExport {
+  id           String       @id @default(cuid())
+  requestedById String
+  requestedBy   User         @relation(fields: [requestedById], references: [id], onDelete: Cascade)
+  type         String       // "disease_cases" | "environmental_data" | "predictions" | "all"
+  format       ExportFormat
+  filters      Json?
+  fileUrl      String?
+  fileSize     Int?
+  recordCount  Int?
+  status       ReportStatus @default(PENDING)
+  errorMessage String?
+  createdAt    DateTime     @default(now())
+  completedAt  DateTime?
+
+  @@index([requestedById, createdAt])
+  @@map("dataset_export")
 }
 
 model Dashboard {
